@@ -1,0 +1,4 @@
+{
+    "login_method": "qrcode",
+    "assets_path": "./assets"
+}
