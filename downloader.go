@@ -17,14 +17,16 @@ import (
 
 // VideoInfo 视频信息结构
 type VideoInfo struct {
-	BVID        string `json:"bvid"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Author      string `json:"author"`
-	Duration    int    `json:"duration"`
-	CID         int    `json:"cid"`
-	Quality     string `json:"quality"`
-	DownloadURL string `json:"download_url"`
+	BVID           string `json:"bvid"`
+	Title          string `json:"title"`
+	Description    string `json:"description"`
+	Author         string `json:"author"`
+	Duration       int    `json:"duration"`
+	CID            int    `json:"cid"`
+	Quality        string `json:"quality"`
+	DownloadURL    string `json:"download_url"`
+	FavoriteID     int    `json:"favorite_id"`
+	FavoriteName   string `json:"favorite_name"`
 }
 
 // Downloader 下载器结构
@@ -45,7 +47,7 @@ func NewDownloader(client *bilibili.Client, config *Config) *Downloader {
 }
 
 // GetVideoInfo 获取视频详细信息
-func (d *Downloader) GetVideoInfo(bvid string) (*VideoInfo, error) {
+func (d *Downloader) GetVideoInfo(bvid string, favoriteID int, favoriteName string) (*VideoInfo, error) {
 	// 获取视频基本信息
 	videoInfo, err := d.client.GetVideoInfo(bilibili.VideoParam{
 		Bvid: bvid,
@@ -80,21 +82,23 @@ func (d *Downloader) GetVideoInfo(bvid string) (*VideoInfo, error) {
 	}
 
 	return &VideoInfo{
-		BVID:        bvid,
-		Title:       videoInfo.Title,
-		Description: videoInfo.Desc,
-		Author:      videoInfo.Owner.Name,
-		Duration:    videoInfo.Duration,
-		CID:         cid,
-		Quality:     d.config.VideoQuality,
-		DownloadURL: downloadURL,
+		BVID:         bvid,
+		Title:        videoInfo.Title,
+		Description:  videoInfo.Desc,
+		Author:       videoInfo.Owner.Name,
+		Duration:     videoInfo.Duration,
+		CID:          cid,
+		Quality:      d.config.VideoQuality,
+		DownloadURL:  downloadURL,
+		FavoriteID:   favoriteID,
+		FavoriteName: favoriteName,
 	}, nil
 }
 
 // DownloadVideo 下载单个视频
 func (d *Downloader) DownloadVideo(videoInfo VideoInfo) error {
-	// 创建下载目录
-	downloadDir := filepath.Join(d.config.DownloadPath, "videos")
+	// 创建下载目录（按收藏夹分类）
+	downloadDir := filepath.Join(d.config.DownloadPath, sanitizeFilename(videoInfo.FavoriteName))
 	if err := os.MkdirAll(downloadDir, 0755); err != nil {
 		return fmt.Errorf("创建下载目录失败: %w", err)
 	}

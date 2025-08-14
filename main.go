@@ -40,15 +40,15 @@ func main() {
 		log.Printf("开始处理收藏夹: %d", favID)
 
 		// 获取收藏夹中的所有视频
-		bvids := getFavVideos(client, favID)
-		log.Printf("收藏夹 %d 包含 %d 个视频", favID, len(bvids))
+		favoriteName, bvids := getFavVideos(client, favID)
+		log.Printf("收藏夹 %d (%s) 包含 %d 个视频", favID, favoriteName, len(bvids))
 
 		// 处理每个视频
 		for i, bvid := range bvids {
 			log.Printf("处理视频 %d/%d: %s", i+1, len(bvids), bvid)
 
 			// 获取视频信息
-			videoInfo, err := downloader.GetVideoInfo(bvid)
+			videoInfo, err := downloader.GetVideoInfo(bvid, favID, favoriteName)
 			if err != nil {
 				log.Printf("获取视频信息失败 %s: %v", bvid, err)
 				continue
@@ -137,9 +137,10 @@ func login(client *bilibili.Client) bool {
 }
 
 // getFavVideos 获取收藏夹中的所有视频
-func getFavVideos(client *bilibili.Client, favID int) []string {
+func getFavVideos(client *bilibili.Client, favID int) (string, []string) {
 	log.Printf("开始获取收藏夹 %d 的视频列表", favID)
 	var bvids []string
+	var favoriteName string
 
 	page := 1
 	for {
@@ -160,6 +161,12 @@ func getFavVideos(client *bilibili.Client, favID int) []string {
 			break
 		}
 
+		// 获取收藏夹名称（第一次获取时）
+		if page == 1 && favList.Info.Title != "" {
+			favoriteName = favList.Info.Title
+			log.Printf("收藏夹名称: %s", favoriteName)
+		}
+
 		// 检查是否有视频
 		if len(favList.Medias) == 0 {
 			log.Printf("收藏夹 %d 第 %d 页没有更多视频", favID, page)
@@ -175,6 +182,11 @@ func getFavVideos(client *bilibili.Client, favID int) []string {
 		page++
 	}
 
-	log.Printf("收藏夹 %d 总共获取到 %d 个视频", favID, len(bvids))
-	return bvids
+	// 如果没有获取到收藏夹名称，使用默认名称
+	if favoriteName == "" {
+		favoriteName = fmt.Sprintf("收藏夹_%d", favID)
+	}
+
+	log.Printf("收藏夹 %d (%s) 总共获取到 %d 个视频", favID, favoriteName, len(bvids))
+	return favoriteName, bvids
 }
