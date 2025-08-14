@@ -1,0 +1,7 @@
+{
+  "favorite_ids": [],
+  "download_path": "./downloads",
+  "cookie_file": "cookie",
+  "max_concurrent": 3,
+  "video_quality": "1080p"
+}
